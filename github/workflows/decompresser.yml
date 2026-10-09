@@ -1,0 +1,27 @@
+name: Décompresser MSI Gestion
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  decompresser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Décompresser l'archive à la racine du dépôt
+        run: |
+          set -e
+          ZIP=$(ls *.zip 2>/dev/null | head -1 || true)
+          if [ -z "$ZIP" ]; then echo "Aucune archive à décompresser."; exit 0; fi
+          rm -rf /tmp/msi && unzip -q -o "$ZIP" -d /tmp/msi
+          SRC=/tmp/msi
+          if [ -d /tmp/msi/msi-gestion ]; then SRC=/tmp/msi/msi-gestion; fi
+          shopt -s dotglob
+          cp -r "$SRC"/* .
+          git rm -q "$ZIP"
+          git config user.name "MSI Gestion"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Décompression de $ZIP à la racine du dépôt"
+          git push
